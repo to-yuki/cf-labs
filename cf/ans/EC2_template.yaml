@@ -1,0 +1,12 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Create EC2 Instance
+Resources:
+  cloudtrainingCFEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: ami-0dcd015c93067a97b
+      InstanceType: t2.micro
+      SubnetId: subnet-0ef30b312731e4b20
+      Tags:
+        - Key: Name
+          Value: cloudtrainingCF-EC2Instance

@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  cloudtrainingCFVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.1.0.0/16
+      Tags:
+        -
+          Key: Name
+          Value: cloudtrainingCFVPC
+
+  cloudtrainingCFPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.1.1.0/24
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref cloudtrainingCFVPC
+      AvailabilityZone: ap-northeast-3a
+      Tags:
+        - Key: Name
+          Value: cloudtrainingCFPublicSubnet
+  cloudtrainingCFPrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.1.2.0/24
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref cloudtrainingCFVPC
+      AvailabilityZone: ap-northeast-3b
+      Tags:
+        - Key: Name
+          Value: cloudtrainingCFPrivateSubnet
+
+  cloudtrainingCFInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: cloudtrainingCFInternetGateway
+
+  AttachcloudtrainingCFInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId : !Ref cloudtrainingCFInternetGateway
+      VpcId: !Ref cloudtrainingCFVPC
+
+  cloudtrainingCFRouteTableForPublicSubnet:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref cloudtrainingCFVPC
+      Tags:
+        - Key: Name
+          Value: cloudtrainingCFRouteTableForPublicSubnet
+
+  cloudtrainingCFRouteForPublicSubnet:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref cloudtrainingCFRouteTableForPublicSubnet
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref cloudtrainingCFInternetGateway
+
+  cloudtrainingCFAssocciateRouteTableForPublicSubnet:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref cloudtrainingCFRouteTableForPublicSubnet
+      SubnetId: !Ref cloudtrainingCFPublicSubnet
+
+  cloudtrainingCF:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  cloudtrainingCFNatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - cloudtrainingCFNatGatewayEIP
+          - AllocationId
+      SubnetId: !Ref cloudtrainingCFPublicSubnet
+      Tags:
+        - Key: Name
+          Value: cloudtrainingCFNatGateway
+
+  cloudtrainingCFRouteTableForPrivateSubnet:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref cloudtrainingCFVPC
+      Tags:
+        - Key: Name
+          Value: cloudtrainingCFRouteTableForPrivateSubnet
+
+  cloudtrainingCFRouteForPrivateSubnet:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref cloudtrainingCFRouteTableForPrivateSubnet
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref cloudtrainingCFNatGateway
+
+  cloudtrainingCFAssocciateRouteTableForPrivateSubnet:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref cloudtrainingCFRouteTableForPrivateSubnet
+      SubnetId: !Ref cloudtrainingCFPrivateSubnet

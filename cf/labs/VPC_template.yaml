@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  XXVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.1.0.0/16
+      Tags:
+        -
+          Key: Name
+          Value: XXVPC
+
+  XXPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.1.1.0/24
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref XXVPC
+      AvailabilityZone: ap-northeast-3a
+      Tags:
+        - Key: Name
+          Value: XXPublicSubnet
+  XXPrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.1.2.0/24
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref XXVPC
+      AvailabilityZone: ap-northeast-3b
+      Tags:
+        - Key: Name
+          Value: XXPrivateSubnet
+
+  XXInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: XXInternetGateway
+
+  AttachXXInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId : !Ref XXInternetGateway
+      VpcId: !Ref XXVPC
+
+  XXRouteTableForPublicSubnet:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref XXVPC
+      Tags:
+        - Key: Name
+          Value: XXRouteTableForPublicSubnet
+
+  XXRouteForPublicSubnet:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref XXRouteTableForPublicSubnet
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref XXInternetGateway
+
+  XXAssocciateRouteTableForPublicSubnet:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref XXRouteTableForPublicSubnet
+      SubnetId: !Ref XXPublicSubnet
+
+  XXNatGatewayEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  XXNatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - XXNatGatewayEIP
+          - AllocationId
+      SubnetId: !Ref XXPublicSubnet
+      Tags:
+        - Key: Name
+          Value: XXNatGateway
+
+  XXRouteTableForPrivateSubnet:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref XXVPC
+      Tags:
+        - Key: Name
+          Value: XXRouteTableForPrivateSubnet
+
+  XXRouteForPrivateSubnet:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref XXRouteTableForPrivateSubnet
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref XXNatGateway
+
+  XXAssocciateRouteTableForPrivateSubnet:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref XXRouteTableForPrivateSubnet
+      SubnetId: !Ref XXPrivateSubnet

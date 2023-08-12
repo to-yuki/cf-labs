@@ -65,7 +65,7 @@ Resources:
       RouteTableId: !Ref cloudtrainingCFRouteTableForPublicSubnet
       SubnetId: !Ref cloudtrainingCFPublicSubnet
 
-  cloudtrainingCF:
+  cloudtrainingCFNatGatewayEIP:
     Type: AWS::EC2::EIP
     Properties:
       Domain: vpc
